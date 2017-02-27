@@ -48,17 +48,22 @@ create_window(void)
 void
 create_images(void)
 {
+    FILE *fp = NULL;
+
+    /* TODO Make number of movers a theme option */
+
     ff_load("themes/tux/bg.png.ff", &pics.bg);
     ff_load("themes/tux/fg.png.ff", &pics.fg);
     ff_load("themes/tux/moving1.png.ff", &pics.moving[0].img);
     ff_load("themes/tux/moving2.png.ff", &pics.moving[1].img);
 
-    pics.moving[0].center_x = 124;
-    pics.moving[0].center_y = 73;
-    pics.moving[0].radius = 6;
-    pics.moving[1].center_x = 171;
-    pics.moving[1].center_y = 73;
-    pics.moving[1].radius = 9;
+    fp = fopen("themes/tux/positions", "r");
+    assert(fp != NULL);
+    fscanf(fp, "%lf %lf\n", &pics.moving[0].center_x, &pics.moving[0].center_y);
+    fscanf(fp, "%lf\n", &pics.moving[0].radius);
+    fscanf(fp, "%lf %lf\n", &pics.moving[1].center_x, &pics.moving[1].center_y);
+    fscanf(fp, "%lf\n", &pics.moving[1].radius);
+    fclose(fp);
 
     pics.canvas.width = pics.bg.width;
     pics.canvas.height = pics.bg.height;
