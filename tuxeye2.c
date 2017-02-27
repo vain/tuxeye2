@@ -10,7 +10,7 @@
 
 Display *dpy;
 int screen;
-Window root, img;
+Window root, win;
 GC gc;
 
 struct Mover
@@ -34,14 +34,14 @@ create_window(void)
         .event_mask = ExposureMask,
     };
 
-    img = XCreateWindow(dpy, root, 0, 0, 800, 600, 0,
+    win = XCreateWindow(dpy, root, 0, 0, 800, 600, 0,
                         DefaultDepth(dpy, screen),
                         CopyFromParent, DefaultVisual(dpy, screen),
                         CWBackPixmap | CWEventMask,
                         &wa);
-    XMapWindow(dpy, img);
+    XMapWindow(dpy, win);
 
-    gc = XCreateGC(dpy, img, 0, NULL);
+    gc = XCreateGC(dpy, win, 0, NULL);
 }
 
 void
@@ -66,7 +66,7 @@ update(void)
     XImage *ximg;
 
     XQueryPointer(dpy, root, &dummy, &dummy, &x, &y, &di, &di, &dui);
-    XTranslateCoordinates(dpy, root, img, x, y, &tx, &ty, &dummy);
+    XTranslateCoordinates(dpy, root, win, x, y, &tx, &ty, &dummy);
     fprintf(stderr, "%d %d\n", tx, ty);
 
     ff_clear(&pics.canvas, 1);
@@ -74,7 +74,7 @@ update(void)
     ff_overlay(&pics.canvas, &pics.fg);
     ximg = ff_to_ximage(&pics.canvas, dpy, screen);
 
-    XPutImage(dpy, img, gc, ximg,
+    XPutImage(dpy, win, gc, ximg,
               0, 0, 0, 0,
               pics.canvas.width, pics.canvas.height);
 
