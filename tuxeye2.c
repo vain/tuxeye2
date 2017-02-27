@@ -51,6 +51,7 @@ create_images(void)
     FILE *fp = NULL;
 
     /* TODO Make number of movers a theme option */
+    /* TODO Make paths a compile time option */
 
     ff_load("themes/tux/bg.png.ff", &pics.bg);
     ff_load("themes/tux/fg.png.ff", &pics.fg);
