@@ -104,7 +104,7 @@ void
 ff_overlay(struct FFImage *onto, struct FFImage *other)
 {
     uint32_t x, y, w, h, rgb;
-    double a;
+    uint16_t a;
 
     w = onto->width;
     h = onto->height;
@@ -113,11 +113,11 @@ ff_overlay(struct FFImage *onto, struct FFImage *other)
     {
         for (x = 0; x < w; x++)
         {
-            a = (double)other->data[(y * w + x) * 4 + 3] / 65536;
+            a = other->data[(y * w + x) * 4 + 3];
             for (rgb = 0; rgb < 3; rgb++)
                 onto->data[(y * w + x) * 4 + rgb] =
-                    a       * other->data[(y * w + x) * 4 + rgb] + 
-                    (1 - a) * onto->data[(y * w + x) * 4 + rgb];
+                    ((a * other->data[(y * w + x) * 4 + rgb]) >> 16) +
+                    (((0xffff - a) * onto->data[(y * w + x) * 4 + rgb]) >> 16);
         }
     }
 }
