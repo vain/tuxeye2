@@ -165,6 +165,33 @@ cleanout:
     return false;
 }
 
+XImage *
+ff_to_ximage(struct FFImage *image, Display *dpy, int screen)
+{
+    uint32_t *ximg_data = NULL, x, y;
+
+    ximg_data = calloc(image->width * image->height, sizeof (uint32_t));
+    if (!ximg_data)
+    {
+        fprintf(stderr, __FF__": Could not allocate memory, ximg_data\n");
+        return NULL;
+    }
+
+    for (y = 0; y < image->height; y++)
+    {
+        for (x = 0; x < image->width; x++)
+        {
+            ximg_data[y * image->width + x] =
+                ((ntohs(image->data[(y * image->width + x) * 4    ]) / 256) << 16) |
+                ((ntohs(image->data[(y * image->width + x) * 4 + 1]) / 256) << 8) |
+                 (ntohs(image->data[(y * image->width + x) * 4 + 2]) / 256);
+        }
+    }
+
+    return XCreateImage(dpy, DefaultVisual(dpy, screen), 24, ZPixmap, 0,
+                        (char *)ximg_data, image->width, image->height, 32, 0);
+}
+
 #undef __FF__
 
 #endif /* LIBFF_H */

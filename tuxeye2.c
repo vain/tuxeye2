@@ -4,12 +4,14 @@
 #include <string.h>
 #include <X11/extensions/XInput2.h>
 #include <X11/Xlib.h>
+#include <X11/Xutil.h>
 
 #include "libff.h"
 
 Display *dpy;
 int screen;
 Window root, img;
+GC gc;
 
 struct Mover
 {
@@ -38,6 +40,8 @@ create_window(void)
                         CWBackPixmap | CWEventMask,
                         &wa);
     XMapWindow(dpy, img);
+
+    gc = XCreateGC(dpy, img, 0, NULL);
 }
 
 void
@@ -59,30 +63,24 @@ update(void)
     int x, y, di, tx, ty;
     unsigned int dui;
     Window dummy;
-    GC gc;
-
-    ff_clear(&pics.canvas, 1);
-    ff_overlay(&pics.canvas, &pics.bg);
-    ff_overlay(&pics.canvas, &pics.fg);
-    ff_save("/tmp/tmp/test.ff", &pics.canvas);
+    XImage *ximg;
 
     XQueryPointer(dpy, root, &dummy, &dummy, &x, &y, &di, &di, &dui);
     XTranslateCoordinates(dpy, root, img, x, y, &tx, &ty, &dummy);
     fprintf(stderr, "%d %d\n", tx, ty);
 
-    gc = XCreateGC(dpy, img, 0, NULL);
+    ff_clear(&pics.canvas, 1);
+    ff_overlay(&pics.canvas, &pics.bg);
+    ff_overlay(&pics.canvas, &pics.fg);
+    ximg = ff_to_ximage(&pics.canvas, dpy, screen);
 
-    tx = tx < 0 ? 0 : tx;
-    ty = ty < 0 ? 0 : ty;
-    tx = tx > 800 ? 800 : tx;
-    ty = ty > 600 ? 600 : ty;
+    XPutImage(dpy, img, gc, ximg,
+              0, 0, 0, 0,
+              pics.canvas.width, pics.canvas.height);
 
-    XSetForeground(dpy, gc, 0xffffffff);
-    XFillRectangle(dpy, img, gc, 0, 0, 800, 600);
-    XSetForeground(dpy, gc, 0xffff0000);
-    XFillRectangle(dpy, img, gc, tx, ty, 10, 10);
-
-    XFreeGC(dpy, gc);
+    /* Note: This also frees the data that was initially passed to
+     * XCreateImage(). */
+    XDestroyImage(ximg);
 }
 
 int
