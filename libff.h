@@ -198,6 +198,37 @@ ff_to_ximage(struct FFImage *image, Display *dpy, int screen)
                         (char *)ximg_data, image->width, image->height, 32, 0);
 }
 
+XImage *
+ff_to_ximage_mono(struct FFImage *image, Display *dpy, int screen)
+{
+    uint32_t x, y;
+    uint8_t *ximg_data = NULL;
+
+    /* XXX broken. no idea how this works. have to get an image using
+     * XGetImage and inspect it. */
+
+    ximg_data = calloc(image->width * image->height, sizeof (uint8_t));
+    if (!ximg_data)
+    {
+        fprintf(stderr, __FF__": Could not allocate memory, ximg_data\n");
+        return NULL;
+    }
+
+    for (y = 0; y < image->height; y++)
+    {
+        for (x = 0; x < image->width; x++)
+        {
+            ximg_data[y * image->width + x] =
+                (image->data[(y * image->width + x) * 4    ] != 0 ||
+                 image->data[(y * image->width + x) * 4 + 1] != 0 ||
+                 image->data[(y * image->width + x) * 4 + 2] != 0) ? 0xFF : 0;
+        }
+    }
+
+    return XCreateImage(dpy, DefaultVisual(dpy, screen), 1, XYBitmap, 0,
+                        (char *)ximg_data, image->width, image->height, 8, image->width);
+}
+
 #undef __FF__
 
 #endif /* LIBFF_H */

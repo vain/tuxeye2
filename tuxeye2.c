@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <X11/extensions/shape.h>
 #include <X11/extensions/XInput2.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
@@ -22,7 +23,7 @@ struct Mover
 
 struct Images
 {
-    struct FFImage canvas, bg, fg;
+    struct FFImage canvas, bg, fg, mask;
     struct Mover moving[2];
 } pics;
 
@@ -53,6 +54,7 @@ create_images(void)
     /* TODO Make number of movers a theme option */
     /* TODO Make paths a compile time option */
 
+    ff_load("themes/tux/mask.png.ff", &pics.mask);
     ff_load("themes/tux/bg.png.ff", &pics.bg);
     ff_load("themes/tux/fg.png.ff", &pics.fg);
     ff_load("themes/tux/moving1.png.ff", &pics.moving[0].img);
@@ -69,6 +71,25 @@ create_images(void)
     pics.canvas.width = pics.bg.width;
     pics.canvas.height = pics.bg.height;
     ff_init_empty(&pics.canvas);
+}
+
+void
+create_mask(void)
+{
+    XImage *ximg;
+    Pixmap mask_pm;
+    GC mono_gc;
+
+    ximg = ff_to_ximage_mono(&pics.mask, dpy, screen);
+    mask_pm = XCreatePixmap(dpy, win, pics.mask.width, pics.mask.height, 1);
+    mono_gc = XCreateGC(dpy, mask_pm, 0, NULL);
+    XPutImage(dpy, mask_pm, mono_gc, ximg,
+              0, 0, 0, 0,
+              pics.mask.width, pics.mask.height);
+    XShapeCombineMask(dpy, win, ShapeBounding, 0, 0, mask_pm, ShapeSet);
+    XFreePixmap(dpy, mask_pm);
+    XDestroyImage(ximg);
+    XFreeGC(dpy, mono_gc);
 }
 
 void
@@ -154,6 +175,7 @@ main()
 
     create_images();
     create_window();
+    create_mask();
 
     for (;;)
     {
