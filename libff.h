@@ -182,9 +182,9 @@ ff_to_ximage(struct FFImage *image, Display *dpy, int screen)
         for (x = 0; x < image->width; x++)
         {
             ximg_data[y * image->width + x] =
-                ((ntohs(image->data[(y * image->width + x) * 4    ]) / 256) << 16) |
-                ((ntohs(image->data[(y * image->width + x) * 4 + 1]) / 256) << 8) |
-                 (ntohs(image->data[(y * image->width + x) * 4 + 2]) / 256);
+                ((image->data[(y * image->width + x) * 4    ] / 256) << 16) |
+                ((image->data[(y * image->width + x) * 4 + 1] / 256) << 8) |
+                 (image->data[(y * image->width + x) * 4 + 2] / 256);
         }
     }
 
