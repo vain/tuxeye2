@@ -101,23 +101,29 @@ cleanout:
 }
 
 void
-ff_overlay(struct FFImage *onto, struct FFImage *other)
+ff_overlay(struct FFImage *onto, struct FFImage *other,
+           uint16_t off_x, uint16_t off_y)
 {
-    uint32_t x, y, w, h, rgb;
+    uint32_t x, y, x_onto, y_onto, rgb;
+    size_t i_onto, i_other;
     uint16_t a;
 
-    w = onto->width;
-    h = onto->height;
-
-    for (y = 0; y < h; y++)
+    for (y = 0; y < other->height; y++)
     {
-        for (x = 0; x < w; x++)
+        for (x = 0; x < other->width; x++)
         {
-            a = other->data[(y * w + x) * 4 + 3];
-            for (rgb = 0; rgb < 3; rgb++)
-                onto->data[(y * w + x) * 4 + rgb] =
-                    ((a * other->data[(y * w + x) * 4 + rgb]) >> 16) +
-                    (((0xffff - a) * onto->data[(y * w + x) * 4 + rgb]) >> 16);
+            x_onto = x + off_x;
+            y_onto = y + off_y;
+            if (x_onto < onto->width && y_onto < onto->height)
+            {
+                i_onto = (y_onto * onto->width + x_onto) * 4;
+                i_other = (y * other->width + x) * 4;
+                a = other->data[i_other + 3];
+                for (rgb = 0; rgb < 3; rgb++)
+                    onto->data[i_onto + rgb] =
+                        ((a * other->data[i_other + rgb]) >> 16) +
+                        (((0xffff - a) * onto->data[i_onto + rgb]) >> 16);
+            }
         }
     }
 }
