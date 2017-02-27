@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -15,8 +16,8 @@ GC gc;
 
 struct Mover
 {
-    struct FFImage ff;
-    double center, radius;
+    struct FFImage img;
+    double center_x, center_y, radius;
 };
 
 struct Images
@@ -49,12 +50,53 @@ create_images(void)
 {
     ff_load("themes/tux/bg.png.ff", &pics.bg);
     ff_load("themes/tux/fg.png.ff", &pics.fg);
-    ff_load("themes/tux/moving1.png.ff", &pics.moving[0].ff);
-    ff_load("themes/tux/moving2.png.ff", &pics.moving[1].ff);
+    ff_load("themes/tux/moving1.png.ff", &pics.moving[0].img);
+    ff_load("themes/tux/moving2.png.ff", &pics.moving[1].img);
+
+    pics.moving[0].center_x = 124;
+    pics.moving[0].center_y = 73;
+    pics.moving[0].radius = 6;
+    pics.moving[1].center_x = 171;
+    pics.moving[1].center_y = 73;
+    pics.moving[1].radius = 9;
 
     pics.canvas.width = pics.bg.width;
     pics.canvas.height = pics.bg.height;
     ff_init_empty(&pics.canvas);
+}
+
+void
+overlay_mover(struct FFImage *canvas, struct Mover *mover, int x, int y)
+{
+    double dx, dy, ld;
+    int mx, my;
+
+    /* x, y is the mouse position relative to the canvas' origin (top
+     * left corner). Translate this to a position relative to this
+     * mover's center. */
+    dx = x - mover->center_x;
+    dy = y - mover->center_y;
+
+    /* Normalize vector from mover center to mouse and rescale, but only
+     * if the mouse is outside of the desired radius. */
+    ld = sqrt(dx * dx + dy * dy);
+    if (ld > mover->radius)
+    {
+        dx /= ld;
+        dy /= ld;
+        dx *= mover->radius;
+        dy *= mover->radius;
+    }
+
+    /* New center of this mover. */
+    mx = mover->center_x + dx;
+    my = mover->center_y + dy;
+
+    /* New top left corner of this mover. */
+    mx -= mover->img.width * 0.5;
+    my -= mover->img.height * 0.5;
+
+    ff_overlay(canvas, &mover->img, mx, my);
 }
 
 void
@@ -67,11 +109,12 @@ update(void)
 
     XQueryPointer(dpy, root, &dummy, &dummy, &x, &y, &di, &di, &dui);
     XTranslateCoordinates(dpy, root, win, x, y, &tx, &ty, &dummy);
-    fprintf(stderr, "%d %d\n", tx, ty);
 
     ff_clear(&pics.canvas, 1);
-    ff_overlay(&pics.canvas, &pics.bg);
-    ff_overlay(&pics.canvas, &pics.fg);
+    ff_overlay(&pics.canvas, &pics.bg, 0, 0);
+    overlay_mover(&pics.canvas, &pics.moving[0], tx, ty);
+    overlay_mover(&pics.canvas, &pics.moving[1], tx, ty);
+    ff_overlay(&pics.canvas, &pics.fg, 0, 0);
     ximg = ff_to_ximage(&pics.canvas, dpy, screen);
 
     XPutImage(dpy, win, gc, ximg,
