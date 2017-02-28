@@ -107,9 +107,7 @@ create_images(void)
     die_false_msg(a == 2 && b == 1 && c == 2 && d == 1,
                   "Malformed 'positions' in themes");
 
-    pics.canvas.width = pics.bg.width;
-    pics.canvas.height = pics.bg.height;
-    die_false(ff_init_empty(&pics.canvas));
+    die_false(ff_init_empty(&pics.canvas, pics.bg.width, pics.bg.height));
 }
 
 void

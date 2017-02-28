@@ -1,6 +1,14 @@
 #ifndef LIBFF_H
 #define LIBFF_H
 
+/* libff
+ *
+ * A very slim library to work with Farbfeld images.
+ *
+ * http://tools.suckless.org/farbfeld/
+ *
+ * pho, 2017, PIZZA-WARE */
+
 #define __FF__ "libff"
 
 #include <arpa/inet.h>
@@ -18,6 +26,8 @@ struct FFImage
     uint16_t *data;
 };
 
+/* Reset all pixels to black, alpha channel can be customized. 'alpha'
+ * must be 0 <= alpha <= 1 (0 being fully transparent, 1 being opaque). */
 void
 ff_clear(struct FFImage *image, double alpha)
 {
@@ -30,9 +40,13 @@ ff_clear(struct FFImage *image, double alpha)
             image->data[(y * image->width + x) * 4 + 3] = alpha * 65535;
 }
 
+/* Initialize a struct FFImage of the given size. Careful, discards any
+ * existing data. */
 bool
-ff_init_empty(struct FFImage *image)
+ff_init_empty(struct FFImage *image, uint32_t w, uint32_t h)
 {
+    image->width = w;
+    image->height = h;
     image->data = calloc(image->width * image->height * 4, sizeof (uint16_t));
     if (!image->data)
     {
@@ -42,6 +56,7 @@ ff_init_empty(struct FFImage *image)
     return true;
 }
 
+/* Load a farbfeld image from a file. */
 bool
 ff_load(char *path, struct FFImage *image)
 {
@@ -52,21 +67,21 @@ ff_load(char *path, struct FFImage *image)
     if (!fp)
     {
         fprintf(stderr, __FF__": Could not open image file '%s'\n", path);
-        goto cleanout;
+        goto errout;
     }
 
     if (fread(hdr, sizeof (uint32_t), 4, fp) != 4)
     {
         fprintf(stderr, __FF__": Could not read farbfeld header from '%s'\n",
                 path);
-        goto cleanout;
+        goto errout;
     }
 
     if (memcmp("farbfeld", hdr, (sizeof "farbfeld") - 1) != 0)
     {
         fprintf(stderr, __FF__": Magic number is not 'farbfeld', path '%s'\n",
                 path);
-        goto cleanout;
+        goto errout;
     }
 
     image->width = ntohl(hdr[2]);
@@ -77,14 +92,14 @@ ff_load(char *path, struct FFImage *image)
     {
         fprintf(stderr, __FF__": Could not allocate memory, image->data for '%s'\n",
                 path);
-        goto cleanout;
+        goto errout;
     }
 
     if (fread(image->data,
               image->width * image->height * 4 * sizeof (uint16_t), 1, fp) != 1)
     {
         fprintf(stderr, __FF__": Unexpected EOF when reading '%s'\n", path);
-        goto cleanout;
+        goto errout;
     }
 
     for (y = 0; y < image->height; y++)
@@ -95,7 +110,7 @@ ff_load(char *path, struct FFImage *image)
     fclose(fp);
     return true;
 
-cleanout:
+errout:
     if (image && image->data)
         free(image->data);
 
@@ -105,6 +120,9 @@ cleanout:
     return false;
 }
 
+/* Render 'other' on top of 'onto'. 'other' will be moved to the
+ * position ('off_x', 'off_y') inside of 'onto'. Offsets can't have
+ * negative values. */
 void
 ff_overlay(struct FFImage *onto, struct FFImage *other,
            uint16_t off_x, uint16_t off_y)
@@ -133,8 +151,9 @@ ff_overlay(struct FFImage *onto, struct FFImage *other,
     }
 }
 
+/* Write a farbfeld image to a file. */
 bool
-ff_save(char *path, struct FFImage *image)
+ff_save(struct FFImage *image, char *path)
 {
     FILE *fp = NULL;
     uint32_t x, y, w, h, rgba;
@@ -144,7 +163,7 @@ ff_save(char *path, struct FFImage *image)
     if (!fp)
     {
         fprintf(stderr, __FF__": Could not open image file '%s'\n", path);
-        goto cleanout;
+        goto errout;
     }
 
     fprintf(fp, "farbfeld");
@@ -169,13 +188,15 @@ ff_save(char *path, struct FFImage *image)
 
     return true;
 
-cleanout:
+errout:
     if (fp)
         fclose(fp);
 
     return false;
 }
 
+/* Convert a farbfeld image into an XImage that can then be sent to an
+ * X11 server via XPutImage(). */
 XImage *
 ff_to_ximage(struct FFImage *image, Display *dpy, int screen)
 {
@@ -203,6 +224,8 @@ ff_to_ximage(struct FFImage *image, Display *dpy, int screen)
                         (char *)ximg_data, image->width, image->height, 32, 0);
 }
 
+/* Same as ff_to_ximage_mono(), but the depth of the XImage will be 1,
+ * i.e. it will be a monochrome bitmap. */
 XImage *
 ff_to_ximage_mono(struct FFImage *image, Display *dpy, int screen)
 {
