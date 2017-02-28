@@ -87,6 +87,7 @@ create_images(void)
     int a, b, c, d;
 
     /* TODO Make number of movers a theme option */
+    /* TODO Make the actual theme ("tux" or something else) an option */
 
     die_false(ff_load(THEME_PATH "/themes/tux/mask.ff", &pics.mask));
     die_false(ff_load(THEME_PATH "/themes/tux/bg.ff", &pics.bg));
