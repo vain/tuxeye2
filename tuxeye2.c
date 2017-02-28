@@ -57,15 +57,14 @@ create_images(void)
     FILE *fp = NULL;
 
     /* TODO Make number of movers a theme option */
-    /* TODO Make paths a compile time option */
 
-    ff_load("themes/tux/mask.png.ff", &pics.mask);
-    ff_load("themes/tux/bg.png.ff", &pics.bg);
-    ff_load("themes/tux/fg.png.ff", &pics.fg);
-    ff_load("themes/tux/moving1.png.ff", &pics.moving[0].img);
-    ff_load("themes/tux/moving2.png.ff", &pics.moving[1].img);
+    ff_load(THEME_PATH "themes/tux/mask.png.ff", &pics.mask);
+    ff_load(THEME_PATH "themes/tux/bg.png.ff", &pics.bg);
+    ff_load(THEME_PATH "themes/tux/fg.png.ff", &pics.fg);
+    ff_load(THEME_PATH "themes/tux/moving1.png.ff", &pics.moving[0].img);
+    ff_load(THEME_PATH "themes/tux/moving2.png.ff", &pics.moving[1].img);
 
-    fp = fopen("themes/tux/positions", "r");
+    fp = fopen(THEME_PATH "themes/tux/positions", "r");
     assert(fp != NULL);
     fscanf(fp, "%lf %lf\n", &pics.moving[0].center_x, &pics.moving[0].center_y);
     fscanf(fp, "%lf\n", &pics.moving[0].radius);
