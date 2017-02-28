@@ -56,7 +56,7 @@ create_window(void)
         .event_mask = ExposureMask,
     };
 
-    win = XCreateWindow(dpy, root, 0, 0, 800, 600, 0,
+    win = XCreateWindow(dpy, root, 0, 0, pics.bg.width, pics.bg.height, 0,
                         DefaultDepth(dpy, screen),
                         CopyFromParent, DefaultVisual(dpy, screen),
                         CWBackPixmap | CWEventMask,
