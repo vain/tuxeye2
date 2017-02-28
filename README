@@ -1,0 +1,33 @@
+                                =======
+                                tuxeye2
+                                =======
+
+
+A clone of our beloveth tuXeyes, depending only on xlib.
+
+
+Installation
+------------
+
+The following C libraries are required:
+
+    - libx11
+
+tuxeye2 expects to be run on a POSIX-ish operating system.
+
+To build the program, run:
+
+    $ make
+
+To specify the path to the themes (will use the current directory if
+unset):
+
+    $ make THEME_PATH=/usr/share/tuxeye2
+
+
+Running
+-------
+
+Just call it:
+
+    $ tuxeye2
