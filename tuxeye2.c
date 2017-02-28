@@ -55,6 +55,13 @@ create_window(void)
         .background_pixmap = ParentRelative,
         .event_mask = ExposureMask,
     };
+    XSizeHints sh = {
+        .flags = PMinSize | PMaxSize,
+        .min_width = pics.bg.width,
+        .max_width = pics.bg.width,
+        .min_height = pics.bg.height,
+        .max_height = pics.bg.height,
+    };
 
     win = XCreateWindow(dpy, root, 0, 0, pics.bg.width, pics.bg.height, 0,
                         DefaultDepth(dpy, screen),
@@ -64,6 +71,7 @@ create_window(void)
     atom_motif = XInternAtom(dpy, "_MOTIF_WM_HINTS", False);
     XChangeProperty(dpy, win, atom_motif, atom_motif, 32, PropModeReplace,
                     (unsigned char *)&mwm_hints, 5);
+    XSetWMNormalHints(dpy, win, &sh);
     XMapWindow(dpy, win);
 
     gc = XCreateGC(dpy, win, 0, NULL);
