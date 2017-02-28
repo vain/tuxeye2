@@ -49,7 +49,7 @@ void
 create_window(void)
 {
     Atom atom_motif;
-    uint32_t mwm_hints[] = { 0x2, 0x0, 0x0, 0x0, 0x0 };
+    long int mwm_hints[] = { 0x2, 0x0, 0x0, 0x0, 0x0 };
     XSetWindowAttributes wa = {
         .override_redirect = True,
         .background_pixmap = ParentRelative,
