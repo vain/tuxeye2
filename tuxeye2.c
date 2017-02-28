@@ -10,6 +10,7 @@
 
 #include "libff.h"
 
+Atom atom_delete, atom_protocols;
 Display *dpy;
 int screen;
 Window root, win;
@@ -66,6 +67,10 @@ create_window(void)
     XMapWindow(dpy, win);
 
     gc = XCreateGC(dpy, win, 0, NULL);
+
+    atom_protocols = XInternAtom(dpy, "WM_PROTOCOLS", False);
+    atom_delete = XInternAtom(dpy, "WM_DELETE_WINDOW", False);
+    XSetWMProtocols(dpy, win, &atom_delete, 1);
 }
 
 void
@@ -185,6 +190,7 @@ int
 main()
 {
     XEvent ev;
+    XClientMessageEvent *cm;
     unsigned char mask_bits[XIMaskLen(XI_LASTEVENT)] = { 0 };
     XIEventMask mask = { XIAllMasterDevices, sizeof mask_bits, mask_bits };
 
@@ -213,6 +219,14 @@ main()
             case Expose:
             case GenericEvent:
                 update();
+                break;
+            case ClientMessage:
+                cm = &ev.xclient;
+                if (cm->message_type == atom_protocols &&
+                    (Atom)cm->data.l[0] == atom_delete)
+                {
+                    exit(EXIT_SUCCESS);
+                }
                 break;
         }
     }
