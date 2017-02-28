@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <X11/Xlib.h>
+#include <X11/Xutil.h>
 
 struct FFImage
 {
@@ -203,9 +204,17 @@ ff_to_ximage_mono(struct FFImage *image, Display *dpy, int screen)
 {
     uint32_t x, y;
     uint8_t *ximg_data = NULL;
+    XImage *ximg;
 
-    /* XXX broken. no idea how this works. have to get an image using
-     * XGetImage and inspect it. */
+    /* Create a monochrome image, i.e. depth of 1 bits per pixel. Yes,
+     * literally one bit. One row of the image could be $width / 8
+     * bytes. We don't want to fiddle with bits, though, and make our
+     * program a little more robust. Tell X11 that each row will be
+     * $width bytes long. We use XPutPixel to actually set the pixels,
+     * we don't do that manually. This isn't as fast as it could be and
+     * it wastes memory (since XPutPixel will internally set *bits*
+     * while we think of "one byte per pixel"), but it clearly is fast
+     * enough. It doesn't matter on modern machines. */
 
     ximg_data = calloc(image->width * image->height, sizeof (uint8_t));
     if (!ximg_data)
@@ -214,19 +223,22 @@ ff_to_ximage_mono(struct FFImage *image, Display *dpy, int screen)
         return NULL;
     }
 
+    ximg = XCreateImage(dpy, DefaultVisual(dpy, screen), 1, ZPixmap, 0,
+                        (char *)ximg_data, image->width, image->height, 8,
+                        image->width);
+
     for (y = 0; y < image->height; y++)
     {
         for (x = 0; x < image->width; x++)
         {
-            ximg_data[y * image->width + x] =
+            XPutPixel(ximg, x, y,
                 (image->data[(y * image->width + x) * 4    ] != 0 ||
                  image->data[(y * image->width + x) * 4 + 1] != 0 ||
-                 image->data[(y * image->width + x) * 4 + 2] != 0) ? 0xFF : 0;
+                 image->data[(y * image->width + x) * 4 + 2] != 0) ? 1 : 0);
         }
     }
 
-    return XCreateImage(dpy, DefaultVisual(dpy, screen), 1, XYBitmap, 0,
-                        (char *)ximg_data, image->width, image->height, 8, image->width);
+    return ximg;
 }
 
 #undef __FF__
