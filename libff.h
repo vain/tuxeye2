@@ -30,12 +30,16 @@ ff_clear(struct FFImage *image, double alpha)
             image->data[(y * image->width + x) * 4 + 3] = alpha * 65535;
 }
 
-void
+bool
 ff_init_empty(struct FFImage *image)
 {
     image->data = calloc(image->width * image->height * 4, sizeof (uint16_t));
     if (!image->data)
+    {
         fprintf(stderr, __FF__": Could not allocate memory in ff_init_empty\n");
+        return false;
+    }
+    return true;
 }
 
 bool

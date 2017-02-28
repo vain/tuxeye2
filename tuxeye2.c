@@ -1,5 +1,5 @@
-#include <assert.h>
 #include <math.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -26,6 +26,23 @@ struct Images
     struct FFImage canvas, bg, fg, mask;
     struct Mover moving[2];
 } pics;
+
+void
+die_false(bool v)
+{
+    if (!v)
+        exit(EXIT_FAILURE);
+}
+
+void
+die_false_msg(bool v, char *msg)
+{
+    if (!v)
+    {
+        fprintf(stderr, "%s\n", msg);
+        exit(EXIT_FAILURE);
+    }
+}
 
 void
 create_window(void)
@@ -55,26 +72,31 @@ void
 create_images(void)
 {
     FILE *fp = NULL;
+    int a, b, c, d;
 
     /* TODO Make number of movers a theme option */
 
-    ff_load(THEME_PATH "themes/tux/mask.png.ff", &pics.mask);
-    ff_load(THEME_PATH "themes/tux/bg.png.ff", &pics.bg);
-    ff_load(THEME_PATH "themes/tux/fg.png.ff", &pics.fg);
-    ff_load(THEME_PATH "themes/tux/moving1.png.ff", &pics.moving[0].img);
-    ff_load(THEME_PATH "themes/tux/moving2.png.ff", &pics.moving[1].img);
+    die_false(ff_load(THEME_PATH "themes/tux/mask.png.ff", &pics.mask));
+    die_false(ff_load(THEME_PATH "themes/tux/bg.png.ff", &pics.bg));
+    die_false(ff_load(THEME_PATH "themes/tux/fg.png.ff", &pics.fg));
+    die_false(ff_load(THEME_PATH "themes/tux/moving1.png.ff", &pics.moving[0].img));
+    die_false(ff_load(THEME_PATH "themes/tux/moving2.png.ff", &pics.moving[1].img));
 
     fp = fopen(THEME_PATH "themes/tux/positions", "r");
-    assert(fp != NULL);
-    fscanf(fp, "%lf %lf\n", &pics.moving[0].center_x, &pics.moving[0].center_y);
-    fscanf(fp, "%lf\n", &pics.moving[0].radius);
-    fscanf(fp, "%lf %lf\n", &pics.moving[1].center_x, &pics.moving[1].center_y);
-    fscanf(fp, "%lf\n", &pics.moving[1].radius);
+    die_false_msg(fp != NULL, "Could not open 'positions' from theme");
+
+    a = fscanf(fp, "%lf %lf\n", &pics.moving[0].center_x, &pics.moving[0].center_y);
+    b = fscanf(fp, "%lf\n", &pics.moving[0].radius);
+    c = fscanf(fp, "%lf %lf\n", &pics.moving[1].center_x, &pics.moving[1].center_y);
+    d = fscanf(fp, "%lf\n", &pics.moving[1].radius);
     fclose(fp);
+
+    die_false_msg(a == 2 && b == 1 && c == 2 && d == 1,
+                  "Malformed 'positions' in themes");
 
     pics.canvas.width = pics.bg.width;
     pics.canvas.height = pics.bg.height;
-    ff_init_empty(&pics.canvas);
+    die_false(ff_init_empty(&pics.canvas));
 }
 
 void
@@ -85,6 +107,7 @@ create_mask(void)
     GC mono_gc;
 
     ximg = ff_to_ximage_mono(&pics.mask, dpy, screen);
+    die_false(ximg != NULL);
     mask_pm = XCreatePixmap(dpy, win, pics.mask.width, pics.mask.height, 1);
     mono_gc = XCreateGC(dpy, mask_pm, 0, NULL);
     XPutImage(dpy, mask_pm, mono_gc, ximg,
@@ -147,6 +170,7 @@ update(void)
     overlay_mover(&pics.canvas, &pics.moving[1], tx, ty);
     ff_overlay(&pics.canvas, &pics.fg, 0, 0);
     ximg = ff_to_ximage(&pics.canvas, dpy, screen);
+    die_false(ximg != NULL);
 
     XPutImage(dpy, win, gc, ximg,
               0, 0, 0, 0,
