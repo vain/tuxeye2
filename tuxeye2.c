@@ -76,11 +76,11 @@ create_images(void)
 
     /* TODO Make number of movers a theme option */
 
-    die_false(ff_load(THEME_PATH "themes/tux/mask.png.ff", &pics.mask));
-    die_false(ff_load(THEME_PATH "themes/tux/bg.png.ff", &pics.bg));
-    die_false(ff_load(THEME_PATH "themes/tux/fg.png.ff", &pics.fg));
-    die_false(ff_load(THEME_PATH "themes/tux/moving1.png.ff", &pics.moving[0].img));
-    die_false(ff_load(THEME_PATH "themes/tux/moving2.png.ff", &pics.moving[1].img));
+    die_false(ff_load(THEME_PATH "themes/tux/mask.ff", &pics.mask));
+    die_false(ff_load(THEME_PATH "themes/tux/bg.ff", &pics.bg));
+    die_false(ff_load(THEME_PATH "themes/tux/fg.ff", &pics.fg));
+    die_false(ff_load(THEME_PATH "themes/tux/moving1.ff", &pics.moving[0].img));
+    die_false(ff_load(THEME_PATH "themes/tux/moving2.ff", &pics.moving[1].img));
 
     fp = fopen(THEME_PATH "themes/tux/positions", "r");
     die_false_msg(fp != NULL, "Could not open 'positions' from theme");
