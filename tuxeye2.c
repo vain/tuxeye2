@@ -30,6 +30,8 @@ struct Images
 void
 create_window(void)
 {
+    Atom atom_motif;
+    uint32_t mwm_hints[] = { 0x2, 0x0, 0x0, 0x0, 0x0 };
     XSetWindowAttributes wa = {
         .override_redirect = True,
         .background_pixmap = ParentRelative,
@@ -41,6 +43,9 @@ create_window(void)
                         CopyFromParent, DefaultVisual(dpy, screen),
                         CWBackPixmap | CWEventMask,
                         &wa);
+    atom_motif = XInternAtom(dpy, "_MOTIF_WM_HINTS", False);
+    XChangeProperty(dpy, win, atom_motif, atom_motif, 32, PropModeReplace,
+                    (unsigned char *)&mwm_hints, 5);
     XMapWindow(dpy, win);
 
     gc = XCreateGC(dpy, win, 0, NULL);
