@@ -222,7 +222,7 @@ main(int argc, char **argv)
     XEvent ev;
     XClientMessageEvent *cm;
     XButtonEvent *be;
-    int x, y, xfd, sret;
+    int x = 0, y = 0, xfd, sret;
     bool use_location = false;
     fd_set fds;
     struct timeval timeout;

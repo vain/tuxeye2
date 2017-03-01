@@ -1,5 +1,5 @@
 LDLIBS += -lX11 -lXext -lm
-CFLAGS += -std=c99 -Wall -Wextra
+CFLAGS += -std=c99 -Wall -Wextra -O2
 
 THEME_PATH = $(shell pwd)
 CFLAGS += -DTHEME_PATH=\"$(THEME_PATH)\"
