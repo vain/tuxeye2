@@ -31,3 +31,16 @@ Running
 Just call it:
 
     $ tuxeye2
+
+This runs tuxeye2 as a regular (undecorated) window that you can move
+around on your screen using your window manager. If you right-click on
+Tux, the program will exit.
+
+If you left-click, it will print its current position. You can use this
+information to make the program launch at a predefined position:
+
+    $ tuxeye2 300 400
+
+This will also use the "override_redirect" flag to bypass the window
+manager: The window will automatically be "sticky", i.e. visible on all
+"workspaces" (if there are any) and always on top.
