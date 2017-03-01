@@ -48,12 +48,11 @@ die_false_msg(bool v, char *msg)
 }
 
 void
-create_window(bool use_location, int x, int y)
+create_window(void)
 {
     Atom atom_motif;
     long int mwm_hints[] = { 0x2, 0x0, 0x0, 0x0, 0x0 };
     XSetWindowAttributes wa = {
-        .override_redirect = False,
         .background_pixmap = ParentRelative,
         .event_mask = ButtonReleaseMask | ExposureMask,
     };
@@ -65,20 +64,15 @@ create_window(bool use_location, int x, int y)
         .max_height = pics.bg.height,
     };
 
-    if (use_location)
-        wa.override_redirect = True;
-
     win = XCreateWindow(dpy, root, 0, 0, pics.bg.width, pics.bg.height, 0,
                         DefaultDepth(dpy, screen),
                         CopyFromParent, DefaultVisual(dpy, screen),
-                        CWOverrideRedirect | CWBackPixmap | CWEventMask,
+                        CWBackPixmap | CWEventMask,
                         &wa);
     atom_motif = XInternAtom(dpy, "_MOTIF_WM_HINTS", False);
     XChangeProperty(dpy, win, atom_motif, atom_motif, 32, PropModeReplace,
                     (unsigned char *)&mwm_hints, 5);
     XSetWMNormalHints(dpy, win, &sh);
-    if (use_location)
-        XMoveWindow(dpy, win, x, y);
     XMapWindow(dpy, win);
 
     gc = XCreateGC(dpy, win, 0, NULL);
@@ -217,22 +211,14 @@ show_position(void)
 }
 
 int
-main(int argc, char **argv)
+main()
 {
     XEvent ev;
     XClientMessageEvent *cm;
     XButtonEvent *be;
-    int x = 0, y = 0, xfd, sret;
-    bool use_location = false;
+    int xfd, sret;
     fd_set fds;
     struct timeval timeout;
-
-    if (argc == 3)
-    {
-        x = atoi(argv[1]);
-        y = atoi(argv[2]);
-        use_location = true;
-    }
 
     dpy = XOpenDisplay(NULL);
     if (!dpy)
@@ -244,10 +230,8 @@ main(int argc, char **argv)
     screen = DefaultScreen(dpy);
     root = RootWindow(dpy, screen);
 
-    XSelectInput(dpy, root, SubstructureNotifyMask);
-
     create_images();
-    create_window(use_location, x, y);
+    create_window();
     create_mask();
 
     /* The xlib docs say: On a POSIX system, the connection number is
@@ -296,10 +280,6 @@ main(int argc, char **argv)
                     else if (be->button == Button3)
                         exit(EXIT_SUCCESS);
                     break;
-                default:
-                    /* Auto-raise, requires selecting for SubstructureNotify. */
-                    if (use_location)
-                        XRaiseWindow(dpy, win);
             }
         }
     }
