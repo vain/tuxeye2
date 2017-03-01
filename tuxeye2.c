@@ -56,6 +56,10 @@ create_window(void)
         .background_pixmap = ParentRelative,
         .event_mask = ButtonReleaseMask | ExposureMask,
     };
+    XClassHint ch = {
+        .res_class = "Tuxeye2",
+        .res_name = "tuxeye2",
+    };
     XSizeHints sh = {
         .flags = PMinSize | PMaxSize,
         .min_width = pics.bg.width,
@@ -72,6 +76,7 @@ create_window(void)
     atom_motif = XInternAtom(dpy, "_MOTIF_WM_HINTS", False);
     XChangeProperty(dpy, win, atom_motif, atom_motif, 32, PropModeReplace,
                     (unsigned char *)&mwm_hints, 5);
+    XSetClassHint(dpy, win, &ch);
     XSetWMNormalHints(dpy, win, &sh);
     XMapWindow(dpy, win);
 
