@@ -54,7 +54,7 @@ create_window(void)
     long int mwm_hints[] = { 0x2, 0x0, 0x0, 0x0, 0x0 };
     XSetWindowAttributes wa = {
         .background_pixmap = ParentRelative,
-        .event_mask = ButtonReleaseMask | ExposureMask,
+        .event_mask = ExposureMask,
     };
     XClassHint ch = {
         .res_class = "Tuxeye2",
@@ -204,23 +204,11 @@ update(bool force_update)
     last_y = ty;
 }
 
-void
-show_position(void)
-{
-    Window dummy;
-    int x, y;
-    unsigned int dui;
-
-    XGetGeometry(dpy, win, &dummy, &x, &y, &dui, &dui, &dui, &dui);
-    printf("%d %d\n", x, y);
-}
-
 int
 main()
 {
     XEvent ev;
     XClientMessageEvent *cm;
-    XButtonEvent *be;
     int xfd, sret;
     fd_set fds;
     struct timeval timeout;
@@ -277,13 +265,6 @@ main()
                     {
                         exit(EXIT_SUCCESS);
                     }
-                    break;
-                case ButtonRelease:
-                    be = &ev.xbutton;
-                    if (be->button == Button1)
-                        show_position();
-                    else if (be->button == Button3)
-                        exit(EXIT_SUCCESS);
                     break;
             }
         }

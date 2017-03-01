@@ -33,9 +33,4 @@ Just call it:
     $ tuxeye2
 
 This runs tuxeye2 as a regular (undecorated) window that you can move
-around on your screen using your window manager. If you right-click on
-Tux, the program will exit.
-
-If you left-click, it will print its current position. You can use this
-information to instruct your window manager to launch the program at a
-predefined position.
+around on your screen using your window manager.
