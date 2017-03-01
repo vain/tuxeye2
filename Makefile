@@ -1,4 +1,4 @@
-LDLIBS += -lX11 -lXi -lXext -lm
+LDLIBS += -lX11 -lXext -lm
 CFLAGS += -std=c99 -Wall -Wextra
 
 THEME_PATH = $(shell pwd)

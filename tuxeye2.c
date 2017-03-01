@@ -3,16 +3,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/select.h>
 #include <X11/extensions/shape.h>
-#include <X11/extensions/XInput2.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 
 #include "libff.h"
 
+#define FPS 30
+
 Atom atom_delete, atom_protocols;
 Display *dpy;
-int screen;
+int screen, last_x, last_y;
 Window root, win;
 GC gc;
 
@@ -180,6 +182,8 @@ update(void)
 
     XQueryPointer(dpy, root, &dummy, &dummy, &x, &y, &di, &di, &dui);
     XTranslateCoordinates(dpy, root, win, x, y, &tx, &ty, &dummy);
+    if (tx == last_x && ty == last_y)
+        return;
 
     ff_clear(&pics.canvas, 1);
     ff_overlay(&pics.canvas, &pics.bg, 0, 0);
@@ -196,6 +200,9 @@ update(void)
     /* Note: This also frees the data that was initially passed to
      * XCreateImage(). */
     XDestroyImage(ximg);
+
+    last_x = tx;
+    last_y = ty;
 }
 
 void
@@ -215,10 +222,10 @@ main(int argc, char **argv)
     XEvent ev;
     XClientMessageEvent *cm;
     XButtonEvent *be;
-    unsigned char mask_bits[XIMaskLen(XI_LASTEVENT)] = { 0 };
-    XIEventMask mask = { XIAllMasterDevices, sizeof mask_bits, mask_bits };
-    int x, y;
+    int x, y, xfd, sret;
     bool use_location = false;
+    fd_set fds;
+    struct timeval timeout;
 
     if (argc == 3)
     {
@@ -237,42 +244,63 @@ main(int argc, char **argv)
     screen = DefaultScreen(dpy);
     root = RootWindow(dpy, screen);
 
-    XISetMask(mask.mask, XI_RawMotion);
-    XISelectEvents(dpy, root, &mask, 1);
     XSelectInput(dpy, root, SubstructureNotifyMask);
 
     create_images();
     create_window(use_location, x, y);
     create_mask();
 
+    /* The xlib docs say: On a POSIX system, the connection number is
+     * the file descriptor associated with the connection. */
+    xfd = ConnectionNumber(dpy);
+
+    XSync(dpy, False);
     for (;;)
     {
-        XNextEvent(dpy, &ev);
-        switch (ev.type)
+        FD_ZERO(&fds);
+        FD_SET(xfd, &fds);
+
+        timeout.tv_sec = 0;
+        timeout.tv_usec = 1000000 / FPS;
+
+        sret = select(xfd + 1, &fds, NULL, NULL, &timeout);
+        if (sret == -1)
         {
-            case Expose:
-            case GenericEvent:
-                update();
-                break;
-            case ClientMessage:
-                cm = &ev.xclient;
-                if (cm->message_type == atom_protocols &&
-                    (Atom)cm->data.l[0] == atom_delete)
-                {
-                    exit(EXIT_SUCCESS);
-                }
-                break;
-            case ButtonRelease:
-                be = &ev.xbutton;
-                if (be->button == Button1)
-                    show_position();
-                else if (be->button == Button3)
-                    exit(EXIT_SUCCESS);
-                break;
-            default:
-                /* Auto-raise, requires selecting for SubstructureNotify. */
-                if (use_location)
-                    XRaiseWindow(dpy, win);
+            perror("select() returned with error");
+            exit(EXIT_FAILURE);
+        }
+        else if (sret == 0)
+            /* No FDs ready, means timeout expired. */
+            update();
+
+        while (XPending(dpy))
+        {
+            XNextEvent(dpy, &ev);
+            switch (ev.type)
+            {
+                case Expose:
+                    update();
+                    break;
+                case ClientMessage:
+                    cm = &ev.xclient;
+                    if (cm->message_type == atom_protocols &&
+                        (Atom)cm->data.l[0] == atom_delete)
+                    {
+                        exit(EXIT_SUCCESS);
+                    }
+                    break;
+                case ButtonRelease:
+                    be = &ev.xbutton;
+                    if (be->button == Button1)
+                        show_position();
+                    else if (be->button == Button3)
+                        exit(EXIT_SUCCESS);
+                    break;
+                default:
+                    /* Auto-raise, requires selecting for SubstructureNotify. */
+                    if (use_location)
+                        XRaiseWindow(dpy, win);
+            }
         }
     }
 }
