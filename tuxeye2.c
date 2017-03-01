@@ -46,11 +46,12 @@ die_false_msg(bool v, char *msg)
 }
 
 void
-create_window(void)
+create_window(bool use_location, int x, int y)
 {
     Atom atom_motif;
     long int mwm_hints[] = { 0x2, 0x0, 0x0, 0x0, 0x0 };
     XSetWindowAttributes wa = {
+        .override_redirect = False,
         .background_pixmap = ParentRelative,
         .event_mask = ButtonReleaseMask | ExposureMask,
     };
@@ -62,15 +63,20 @@ create_window(void)
         .max_height = pics.bg.height,
     };
 
+    if (use_location)
+        wa.override_redirect = True;
+
     win = XCreateWindow(dpy, root, 0, 0, pics.bg.width, pics.bg.height, 0,
                         DefaultDepth(dpy, screen),
                         CopyFromParent, DefaultVisual(dpy, screen),
-                        CWBackPixmap | CWEventMask,
+                        CWOverrideRedirect | CWBackPixmap | CWEventMask,
                         &wa);
     atom_motif = XInternAtom(dpy, "_MOTIF_WM_HINTS", False);
     XChangeProperty(dpy, win, atom_motif, atom_motif, 32, PropModeReplace,
                     (unsigned char *)&mwm_hints, 5);
     XSetWMNormalHints(dpy, win, &sh);
+    if (use_location)
+        XMoveWindow(dpy, win, x, y);
     XMapWindow(dpy, win);
 
     gc = XCreateGC(dpy, win, 0, NULL);
@@ -204,13 +210,22 @@ show_position(void)
 }
 
 int
-main()
+main(int argc, char **argv)
 {
     XEvent ev;
     XClientMessageEvent *cm;
     XButtonEvent *be;
     unsigned char mask_bits[XIMaskLen(XI_LASTEVENT)] = { 0 };
     XIEventMask mask = { XIAllMasterDevices, sizeof mask_bits, mask_bits };
+    int x, y;
+    bool use_location = false;
+
+    if (argc == 3)
+    {
+        x = atoi(argv[1]);
+        y = atoi(argv[2]);
+        use_location = true;
+    }
 
     dpy = XOpenDisplay(NULL);
     if (!dpy)
@@ -226,7 +241,7 @@ main()
     XISelectEvents(dpy, root, &mask, 1);
 
     create_images();
-    create_window();
+    create_window(use_location, x, y);
     create_mask();
 
     for (;;)
