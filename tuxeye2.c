@@ -173,7 +173,7 @@ overlay_mover(struct FFImage *canvas, struct Mover *mover, int x, int y)
 }
 
 void
-update(void)
+update(bool force_update)
 {
     int x, y, di, tx, ty;
     unsigned int dui;
@@ -182,7 +182,7 @@ update(void)
 
     XQueryPointer(dpy, root, &dummy, &dummy, &x, &y, &di, &di, &dui);
     XTranslateCoordinates(dpy, root, win, x, y, &tx, &ty, &dummy);
-    if (tx == last_x && ty == last_y)
+    if (!force_update && tx == last_x && ty == last_y)
         return;
 
     ff_clear(&pics.canvas, 1);
@@ -271,7 +271,7 @@ main(int argc, char **argv)
         }
         else if (sret == 0)
             /* No FDs ready, means timeout expired. */
-            update();
+            update(false);
 
         while (XPending(dpy))
         {
@@ -279,7 +279,7 @@ main(int argc, char **argv)
             switch (ev.type)
             {
                 case Expose:
-                    update();
+                    update(true);
                     break;
                 case ClientMessage:
                     cm = &ev.xclient;
