@@ -239,6 +239,7 @@ main(int argc, char **argv)
 
     XISetMask(mask.mask, XI_RawMotion);
     XISelectEvents(dpy, root, &mask, 1);
+    XSelectInput(dpy, root, SubstructureNotifyMask);
 
     create_images();
     create_window(use_location, x, y);
@@ -268,6 +269,10 @@ main(int argc, char **argv)
                 else if (be->button == Button3)
                     exit(EXIT_SUCCESS);
                 break;
+            default:
+                /* Auto-raise, requires selecting for SubstructureNotify. */
+                if (use_location)
+                    XRaiseWindow(dpy, win);
         }
     }
 }
