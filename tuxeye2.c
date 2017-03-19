@@ -15,6 +15,7 @@
 Atom atom_delete, atom_protocols;
 Display *dpy;
 int screen, last_x, last_y;
+unsigned int win_w, win_h, last_win_w, last_win_h;
 Window root, win;
 GC gc;
 
@@ -54,7 +55,7 @@ create_window(void)
     long int mwm_hints[] = { 0x2, 0x0, 0x0, 0x0, 0x0 };
     XSetWindowAttributes wa = {
         .background_pixmap = ParentRelative,
-        .event_mask = ExposureMask,
+        .event_mask = ExposureMask | StructureNotifyMask,
     };
     XClassHint ch = {
         .res_class = "Tuxeye2",
@@ -118,26 +119,6 @@ create_images(void)
 }
 
 void
-create_mask(void)
-{
-    XImage *ximg;
-    Pixmap mask_pm;
-    GC mono_gc;
-
-    ximg = ff_to_ximage_mono(&pics.mask, dpy, screen);
-    die_false(ximg != NULL);
-    mask_pm = XCreatePixmap(dpy, win, pics.mask.width, pics.mask.height, 1);
-    mono_gc = XCreateGC(dpy, mask_pm, 0, NULL);
-    XPutImage(dpy, mask_pm, mono_gc, ximg,
-              0, 0, 0, 0,
-              pics.mask.width, pics.mask.height);
-    XShapeCombineMask(dpy, win, ShapeBounding, 0, 0, mask_pm, ShapeSet);
-    XFreePixmap(dpy, mask_pm);
-    XDestroyImage(ximg);
-    XFreeGC(dpy, mono_gc);
-}
-
-void
 overlay_mover(struct FFImage *canvas, struct Mover *mover, int x, int y)
 {
     double dx, dy, ld;
@@ -172,6 +153,40 @@ overlay_mover(struct FFImage *canvas, struct Mover *mover, int x, int y)
 }
 
 void
+update_mask(bool force_update)
+{
+    XImage *ximg;
+    Pixmap mask_pm;
+    GC mono_gc;
+    int di;
+    unsigned int dui;
+    Window dummy;
+
+    XGetGeometry(dpy, win, &dummy, &di, &di, &win_w, &win_h, &dui, &dui);
+    if (!force_update && win_w == last_win_w && win_h == last_win_h)
+        return;
+
+    ximg = ff_to_ximage_mono(&pics.mask, dpy, screen);
+    die_false(ximg != NULL);
+    mask_pm = XCreatePixmap(dpy, win, win_w, win_h, 1);
+    mono_gc = XCreateGC(dpy, mask_pm, 0, NULL);
+    XSetForeground(dpy, mono_gc, 0);
+    XFillRectangle(dpy, mask_pm, mono_gc, 0, 0, win_w, win_h);
+    XPutImage(dpy, mask_pm, mono_gc, ximg,
+              0, 0,
+              (win_w - pics.mask.width) * 0.5,
+              (win_h - pics.mask.height) * 0.5,
+              pics.mask.width, pics.mask.height);
+    XShapeCombineMask(dpy, win, ShapeBounding, 0, 0, mask_pm, ShapeSet);
+    XFreePixmap(dpy, mask_pm);
+    XDestroyImage(ximg);
+    XFreeGC(dpy, mono_gc);
+
+    last_win_w = win_w;
+    last_win_h = win_h;
+}
+
+void
 update(bool force_update)
 {
     int x, y, di, tx, ty;
@@ -181,6 +196,11 @@ update(bool force_update)
 
     XQueryPointer(dpy, root, &dummy, &dummy, &x, &y, &di, &di, &dui);
     XTranslateCoordinates(dpy, root, win, x, y, &tx, &ty, &dummy);
+
+    /* Account for: Tux is centered in the window. */
+    tx -= (win_w - pics.canvas.width) * 0.5;
+    ty -= (win_h - pics.canvas.height) * 0.5;
+
     if (!force_update && tx == last_x && ty == last_y)
         return;
 
@@ -193,7 +213,9 @@ update(bool force_update)
     die_false(ximg != NULL);
 
     XPutImage(dpy, win, gc, ximg,
-              0, 0, 0, 0,
+              0, 0,
+              (win_w - pics.canvas.width) * 0.5,
+              (win_h - pics.canvas.height) * 0.5,
               pics.canvas.width, pics.canvas.height);
 
     /* Note: This also frees the data that was initially passed to
@@ -225,7 +247,7 @@ main()
 
     create_images();
     create_window();
-    create_mask();
+    update_mask(true);
 
     /* The xlib docs say: On a POSIX system, the connection number is
      * the file descriptor associated with the connection. */
@@ -257,6 +279,9 @@ main()
             {
                 case Expose:
                     update(true);
+                    break;
+                case ConfigureNotify:
+                    update_mask(false);
                     break;
                 case ClientMessage:
                     cm = &ev.xclient;

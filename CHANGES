@@ -1,5 +1,9 @@
 Release history for tuxeye2
 
+next
+  [Changed]
+  - Tux is now centered in the window.
+
 v17.03  2017-03-02
   - Initial release.
   - Display Tux with moving eyes.
