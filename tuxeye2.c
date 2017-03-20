@@ -29,7 +29,8 @@ struct Mover
 struct Images
 {
     struct FFImage canvas, bg, fg, mask;
-    struct Mover moving[2];
+    int num_movers;
+    struct Mover *moving;
 } pics;
 
 void
@@ -102,28 +103,43 @@ void
 create_images(char *theme)
 {
     FILE *fp = NULL;
-    char buf[PATH_SZ] = "";
-    int a, b, c, d;
+    char buf[PATH_SZ] = "", buf_fname[PATH_SZ] = "";
+    int tokens;
+    int i;
 
-    /* TODO Make number of movers a theme option */
+    fp = fopen(make_path(theme, "movers", buf, PATH_SZ), "r");
+    die_false_msg(fp != NULL, "Could not open 'movers' from theme");
+    tokens = fscanf(fp, "%d\n", &pics.num_movers);
+    die_false_msg(tokens == 1 && pics.num_movers > 0,
+                  "Malformed 'movers' in theme");
+    fclose(fp);
 
     die_false(ff_load(make_path(theme, "mask.ff", buf, PATH_SZ), &pics.mask));
     die_false(ff_load(make_path(theme, "bg.ff", buf, PATH_SZ), &pics.bg));
     die_false(ff_load(make_path(theme, "fg.ff", buf, PATH_SZ), &pics.fg));
-    die_false(ff_load(make_path(theme, "moving1.ff", buf, PATH_SZ), &pics.moving[0].img));
-    die_false(ff_load(make_path(theme, "moving2.ff", buf, PATH_SZ), &pics.moving[1].img));
+
+    pics.moving = calloc(pics.num_movers, sizeof (struct Mover));
+    die_false_msg(pics.moving != NULL, "Could not allocate memory for movers");
+    for (i = 0; i < pics.num_movers; i++)
+    {
+        snprintf(buf_fname, PATH_SZ - 1, "moving%d.ff", i);
+        buf_fname[PATH_SZ - 1] = 0;
+        die_false(ff_load(make_path(theme, buf_fname, buf, PATH_SZ),
+                  &pics.moving[i].img));
+    }
 
     fp = fopen(make_path(theme, "positions", buf, PATH_SZ), "r");
     die_false_msg(fp != NULL, "Could not open 'positions' from theme");
+    for (i = 0; i < pics.num_movers; i++)
+    {
+        tokens = fscanf(fp, "%lf %lf\n", &pics.moving[i].center_x,
+                        &pics.moving[i].center_y);
+        die_false_msg(tokens == 2, "Malformed 'positions' (center) in theme");
 
-    a = fscanf(fp, "%lf %lf\n", &pics.moving[0].center_x, &pics.moving[0].center_y);
-    b = fscanf(fp, "%lf\n", &pics.moving[0].radius);
-    c = fscanf(fp, "%lf %lf\n", &pics.moving[1].center_x, &pics.moving[1].center_y);
-    d = fscanf(fp, "%lf\n", &pics.moving[1].radius);
+        tokens = fscanf(fp, "%lf\n", &pics.moving[i].radius);
+        die_false_msg(tokens == 1, "Malformed 'positions' (radius) in theme");
+    }
     fclose(fp);
-
-    die_false_msg(a == 2 && b == 1 && c == 2 && d == 1,
-                  "Malformed 'positions' in themes");
 
     die_false(ff_init_empty(&pics.canvas, pics.bg.width, pics.bg.height));
 }
@@ -199,7 +215,7 @@ update_mask(bool force_update)
 void
 update(bool force_update)
 {
-    int x, y, di, tx, ty;
+    int x, y, di, tx, ty, i;
     unsigned int dui;
     Window dummy;
     XImage *ximg;
@@ -216,8 +232,8 @@ update(bool force_update)
 
     ff_clear(&pics.canvas, 1);
     ff_overlay(&pics.canvas, &pics.bg, 0, 0);
-    overlay_mover(&pics.canvas, &pics.moving[0], tx, ty);
-    overlay_mover(&pics.canvas, &pics.moving[1], tx, ty);
+    for (i = 0; i < pics.num_movers; i++)
+        overlay_mover(&pics.canvas, &pics.moving[i], tx, ty);
     ff_overlay(&pics.canvas, &pics.fg, 0, 0);
     ximg = ff_to_ximage(&pics.canvas, dpy, screen);
     die_false(ximg != NULL);
