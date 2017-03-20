@@ -34,3 +34,8 @@ Just call it:
 
 This runs tuxeye2 as a regular (undecorated) window that you can move
 around on your screen using your window manager.
+
+If there is more than one theme available, you can select it by setting
+argv[1]:
+
+    $ tuxeye2 beastie

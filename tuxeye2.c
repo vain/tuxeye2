@@ -10,6 +10,7 @@
 
 #include "libff.h"
 
+#define PATH_SZ 256
 #define FPS 30
 
 Atom atom_delete, atom_protocols;
@@ -88,22 +89,31 @@ create_window(void)
     XSetWMProtocols(dpy, win, &atom_delete, 1);
 }
 
+char *
+make_path(char *theme, char *filename, char *target_buf, size_t len)
+{
+    snprintf(target_buf, len - 1, "%s/themes/%s/%s", THEME_PATH, theme,
+             filename);
+    target_buf[len - 1] = 0;
+    return target_buf;
+}
+
 void
-create_images(void)
+create_images(char *theme)
 {
     FILE *fp = NULL;
+    char buf[PATH_SZ] = "";
     int a, b, c, d;
 
     /* TODO Make number of movers a theme option */
-    /* TODO Make the actual theme ("tux" or something else) an option */
 
-    die_false(ff_load(THEME_PATH "/themes/tux/mask.ff", &pics.mask));
-    die_false(ff_load(THEME_PATH "/themes/tux/bg.ff", &pics.bg));
-    die_false(ff_load(THEME_PATH "/themes/tux/fg.ff", &pics.fg));
-    die_false(ff_load(THEME_PATH "/themes/tux/moving1.ff", &pics.moving[0].img));
-    die_false(ff_load(THEME_PATH "/themes/tux/moving2.ff", &pics.moving[1].img));
+    die_false(ff_load(make_path(theme, "mask.ff", buf, PATH_SZ), &pics.mask));
+    die_false(ff_load(make_path(theme, "bg.ff", buf, PATH_SZ), &pics.bg));
+    die_false(ff_load(make_path(theme, "fg.ff", buf, PATH_SZ), &pics.fg));
+    die_false(ff_load(make_path(theme, "moving1.ff", buf, PATH_SZ), &pics.moving[0].img));
+    die_false(ff_load(make_path(theme, "moving2.ff", buf, PATH_SZ), &pics.moving[1].img));
 
-    fp = fopen(THEME_PATH "/themes/tux/positions", "r");
+    fp = fopen(make_path(theme, "positions", buf, PATH_SZ), "r");
     die_false_msg(fp != NULL, "Could not open 'positions' from theme");
 
     a = fscanf(fp, "%lf %lf\n", &pics.moving[0].center_x, &pics.moving[0].center_y);
@@ -227,7 +237,7 @@ update(bool force_update)
 }
 
 int
-main()
+main(int argc, char **argv)
 {
     XEvent ev;
     XClientMessageEvent *cm;
@@ -245,7 +255,10 @@ main()
     screen = DefaultScreen(dpy);
     root = RootWindow(dpy, screen);
 
-    create_images();
+    if (argc == 2)
+        create_images(argv[1]);
+    else
+        create_images("tux");
     create_window();
     update_mask(true);
 

@@ -3,6 +3,7 @@ Release history for tuxeye2
 next
   [Changed]
   - Tux is now centered in the window.
+  - Theme can be selected via argv[1].
 
 v17.03  2017-03-02
   - Initial release.
