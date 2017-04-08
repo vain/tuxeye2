@@ -1,6 +1,6 @@
 Release history for tuxeye2
 
-next
+v17.04  2017-04-08
   [Changed]
   - Tux is now centered in the window.
   - Number of "movers" is now a theme option. This means you can have
