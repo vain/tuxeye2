@@ -5,9 +5,7 @@
  *
  * A very slim library to work with Farbfeld images.
  *
- * http://tools.suckless.org/farbfeld/
- *
- * pho, 2017, PIZZA-WARE */
+ * Upstream, format reference: http://tools.suckless.org/farbfeld/ */
 
 #define __FF__ "libff"
 
