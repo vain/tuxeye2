@@ -103,32 +103,31 @@ void
 create_images(char *theme)
 {
     FILE *fp = NULL;
-    char buf[PATH_SZ] = "", buf_fname[PATH_SZ] = "";
+    char buf[2 * PATH_SZ] = "", buf_fname[PATH_SZ] = "";
     int tokens;
     int i;
 
-    fp = fopen(make_path(theme, "movers", buf, PATH_SZ), "r");
+    fp = fopen(make_path(theme, "movers", buf, sizeof buf), "r");
     die_false_msg(fp != NULL, "Could not open 'movers' from theme");
     tokens = fscanf(fp, "%d\n", &pics.num_movers);
     die_false_msg(tokens == 1 && pics.num_movers > 0,
                   "Malformed 'movers' in theme");
     fclose(fp);
 
-    die_false(ff_load(make_path(theme, "mask.ff", buf, PATH_SZ), &pics.mask));
-    die_false(ff_load(make_path(theme, "bg.ff", buf, PATH_SZ), &pics.bg));
-    die_false(ff_load(make_path(theme, "fg.ff", buf, PATH_SZ), &pics.fg));
+    die_false(ff_load(make_path(theme, "mask.ff", buf, sizeof buf), &pics.mask));
+    die_false(ff_load(make_path(theme, "bg.ff", buf, sizeof buf), &pics.bg));
+    die_false(ff_load(make_path(theme, "fg.ff", buf, sizeof buf), &pics.fg));
 
     pics.moving = calloc(pics.num_movers, sizeof (struct Mover));
     die_false_msg(pics.moving != NULL, "Could not allocate memory for movers");
     for (i = 0; i < pics.num_movers; i++)
     {
-        snprintf(buf_fname, PATH_SZ - 1, "moving%d.ff", i);
-        buf_fname[PATH_SZ - 1] = 0;
-        die_false(ff_load(make_path(theme, buf_fname, buf, PATH_SZ),
+        snprintf(buf_fname, sizeof buf_fname, "moving%d.ff", i);
+        die_false(ff_load(make_path(theme, buf_fname, buf, sizeof buf),
                   &pics.moving[i].img));
     }
 
-    fp = fopen(make_path(theme, "positions", buf, PATH_SZ), "r");
+    fp = fopen(make_path(theme, "positions", buf, sizeof buf), "r");
     die_false_msg(fp != NULL, "Could not open 'positions' from theme");
     for (i = 0; i < pics.num_movers; i++)
     {
